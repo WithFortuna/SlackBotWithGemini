@@ -13,5 +13,7 @@ services:
       - app
     env_file:
       - .env
+    extra_hosts:  # linux에서는 host.docker.internal을 별도 IP랑 맵핑을 해줘야함
+      - "host.docker.internal:${INTERNAL_PRIVATE_IP}"
     restart: unless-stopped
 
