@@ -1,6 +1,9 @@
 package com.zuzihe.slackbot.slack.bolt.handler.interactive;
 
+import com.slack.api.app_backend.interactive_components.payload.BlockActionPayload;
 import com.slack.api.bolt.App;
+import com.slack.api.bolt.request.RequestType;
+import com.slack.api.bolt.request.builtin.BlockActionRequest;
 import com.zuzihe.slackbot.slack.bolt.SlackBoltService;
 import com.zuzihe.slackbot.slack.bolt.handler.event.SlackBoltHandlerRegistrar;
 import lombok.RequiredArgsConstructor;
@@ -17,14 +20,15 @@ public class BlockActionHandlerRegistrar implements SlackBoltHandlerRegistrar {
 
     @Override
     public void register(App app) {
-        // 모든 블록 액션 로깅
-        app.blockAction(Pattern.compile(".*") ,(req, ctx) -> {
-            String actionId = req.getPayload().getActions().get(0).getActionId();
-            String userId = req.getPayload().getUser().getId();
-
-            log.info("[BlockAction] 모든 버튼 클릭 감지 - ActionId: {}, UserId: {}", actionId, userId);
-
-            return ctx.ack();
+        // 공통 로깅 미들웨어
+        app.use((req, resp, chain) -> {
+            if (req.getRequestType() == RequestType.BlockAction) {
+                BlockActionPayload payload = ((BlockActionRequest) req).getPayload();
+                String actionId = payload.getActions().get(0).getActionId();
+                String userId = payload.getUser().getId();
+                log.info("[BlockAction] 버튼 클릭 감지 - ActionId: {}, UserId: {}", actionId, userId);
+            }
+            return chain.next(req);
         });
 
         // 특정 채팅 버튼 클릭 처리
