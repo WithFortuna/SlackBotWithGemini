@@ -1,10 +1,29 @@
-version: "3.8"
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: slackbot-mysql
+    env_file:
+      - .env
+    ports:
+      - "${MYSQL_PORT}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: slackbot_password
+      MYSQL_DATABASE: slackbot
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: unless-stopped
+
   app:
     build: .
     ports:
       - "8080:8080"
     container_name: myapp
+    depends_on:
+      - mysql
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/slackbot?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -16,4 +35,7 @@ services:
     extra_hosts:  # linux에서는 host.docker.internal을 별도 IP랑 맵핑을 해줘야함
       - "host.docker.internal:${INTERNAL_PRIVATE_IP}"
     restart: unless-stopped
+
+volumes:
+  mysql-data:
 
