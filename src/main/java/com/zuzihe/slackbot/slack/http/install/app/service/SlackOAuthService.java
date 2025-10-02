@@ -3,6 +3,7 @@ package com.zuzihe.slackbot.slack.http.install.app.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zuzihe.slackbot.slack.http.install.app.web.SlackOAuthResponse;
+import com.zuzihe.slackbot.slack.workspace.service.WorkspaceInstallationService;
 import com.zuzihe.slackbot.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,8 @@ import java.nio.charset.StandardCharsets;
 @Service
 @RequiredArgsConstructor
 public class SlackOAuthService {
+
+    private final WorkspaceInstallationService workspaceInstallationService;
 
     @Value("${slack.client-id}")
     private String slackClientId;
@@ -78,9 +81,29 @@ public class SlackOAuthService {
         }
 
         String teamId = response.getTeam().getId();
+        String teamName = response.getTeam().getName();
         String botToken = response.getAccess_token();
+        String botUserId = response.getBot_user_id();
+        String scope = response.getScope();
 
-        // team_id와 bot_token 등을 DB에 저장
-        // 예: workspace 테이블에 insert or update
+        // 기존 OAuth 방식으로 받은 토큰을 데이터베이스에 저장
+        try {
+            workspaceInstallationService.saveOrUpdateInstallation(
+                    teamId,
+                    teamName,
+                    botToken,
+                    botUserId,
+                    scope,
+                    null, // userToken - OAuth v2에서는 별도 처리
+                    null, // userId
+                    null, // userScopes
+                    null  // installerUserId - 기존 방식에서는 추적하지 않음
+            );
+
+            log.info("워크스페이스 설치 정보 저장 완료: teamId={}, teamName={}", teamId, teamName);
+        } catch (Exception e) {
+            log.error("워크스페이스 설치 정보 저장 실패: teamId={}", teamId, e);
+            throw new CustomException("설치 정보 저장 실패: " + e.getMessage());
+        }
     }
 }

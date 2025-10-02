@@ -13,6 +13,7 @@ public class SlackOAuthResponse {
     private boolean is_enterprise_install;
     private Team team;
     private String error;
+    private String scope;
 
     @Data
     public static class Team {
